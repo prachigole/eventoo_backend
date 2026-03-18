@@ -1,22 +1,48 @@
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from .config import settings
 from .exceptions import AppException, app_exception_handler
+from .logging_middleware import RequestLoggingMiddleware
+from .mdns import advertise, stop
 from .routers import events, vendors, candidates
+
+# ── Logging setup ──────────────────────────────────────────────────────────────
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+
+# ── Lifespan: mDNS advertisement ──────────────────────────────────────────────
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    # Skip mDNS in test / dev-skip-auth mode — tests restart the app many
+    # times per run and Zeroconf raises NonUniqueNameException on re-registration.
+    if settings.dev_skip_auth:
+        yield
+        return
+
+    zc = await advertise()   # announce _eventoo._tcp.local. on the LAN
+    yield
+    await stop(zc)           # clean up on shutdown (Ctrl-C / SIGTERM)
+
 
 app = FastAPI(
     title="Eventoo API",
     version="1.0.0",
     description="REST API for the Eventoo event management app",
-    redirect_slashes=False,   # don't redirect /events → /events/
+    redirect_slashes=False,
+    lifespan=lifespan,
 )
 
-# ── CORS ───────────────────────────────────────────────────────────────────────
+# ── Middleware (outermost first) ───────────────────────────────────────────────
+app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # tighten to your domain in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,10 +54,9 @@ app.add_exception_handler(AppException, app_exception_handler)
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-    # Pick the first validation error and surface it as a readable message
     errors = exc.errors()
     first = errors[0] if errors else {}
-    field = " → ".join(str(x) for x in first.get("loc", [])[1:])  # skip "body"
+    field = " → ".join(str(x) for x in first.get("loc", [])[1:])
     msg = first.get("msg", "Invalid input")
     detail = f"{field}: {msg}" if field else msg
     return JSONResponse(
