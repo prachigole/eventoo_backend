@@ -9,6 +9,7 @@ SQLite compatibility notes:
   - PostgreSQL Enum types use native Python enums (no CREATE TYPE needed)
 """
 import os
+import shutil
 import uuid as _uuid_module
 import sqlite3
 import pytest
@@ -82,6 +83,7 @@ import app.models.todo       # noqa: F401, E402
 import app.models.invite     # noqa: F401, E402
 import app.models.task               # noqa: F401, E402
 import app.models.extension_request  # noqa: F401, E402
+import app.models.task_photo          # noqa: F401, E402
 
 TEST_DATABASE_URL = "sqlite:///./test.db"
 
@@ -109,6 +111,7 @@ def reset_db():
     _uid_to_user_id.clear()
     yield
     Base.metadata.drop_all(bind=engine)
+    shutil.rmtree("uploads", ignore_errors=True)
 
 
 @pytest.fixture()

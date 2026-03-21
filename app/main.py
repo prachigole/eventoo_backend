@@ -1,16 +1,18 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from .config import settings
 from .exceptions import AppException, app_exception_handler
 from .logging_middleware import RequestLoggingMiddleware
 from .mdns import advertise, stop
-from .routers import events, vendors, candidates, todos, users, invites, tasks, extension_requests
+from .routers import events, vendors, candidates, todos, users, invites, tasks, extension_requests, task_photos
 
 # ── Logging setup ──────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -85,6 +87,11 @@ app.include_router(users.router,      prefix="/api/v1")
 app.include_router(invites.router,    prefix="/api/v1")
 app.include_router(tasks.router,               prefix="/api/v1")
 app.include_router(extension_requests.router,  prefix="/api/v1")
+app.include_router(task_photos.router,         prefix="/api/v1")
+
+# ── Static file serving for uploaded photos ────────────────────────────────────
+os.makedirs("uploads/task_photos", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 # ── Health check ───────────────────────────────────────────────────────────────
