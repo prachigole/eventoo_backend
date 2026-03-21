@@ -78,6 +78,10 @@ import app.models.user  # noqa: F401, E402
 import app.models.event  # noqa: F401, E402
 import app.models.vendor  # noqa: F401, E402
 import app.models.candidate  # noqa: F401, E402
+import app.models.todo       # noqa: F401, E402
+import app.models.invite     # noqa: F401, E402
+import app.models.task               # noqa: F401, E402
+import app.models.extension_request  # noqa: F401, E402
 
 TEST_DATABASE_URL = "sqlite:///./test.db"
 
@@ -105,6 +109,16 @@ def reset_db():
     _uid_to_user_id.clear()
     yield
     Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture()
+def db_session():
+    """Direct DB session for test setup (inserting seed data)."""
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 @pytest.fixture()

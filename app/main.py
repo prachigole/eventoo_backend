@@ -10,7 +10,7 @@ from .config import settings
 from .exceptions import AppException, app_exception_handler
 from .logging_middleware import RequestLoggingMiddleware
 from .mdns import advertise, stop
-from .routers import events, vendors, candidates
+from .routers import events, vendors, candidates, todos, users, invites, tasks, extension_requests
 
 # ── Logging setup ──────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -80,6 +80,11 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 app.include_router(events.router,     prefix="/api/v1")
 app.include_router(vendors.router,    prefix="/api/v1")
 app.include_router(candidates.router, prefix="/api/v1")
+app.include_router(todos.router,      prefix="/api/v1")
+app.include_router(users.router,      prefix="/api/v1")
+app.include_router(invites.router,    prefix="/api/v1")
+app.include_router(tasks.router,               prefix="/api/v1")
+app.include_router(extension_requests.router,  prefix="/api/v1")
 
 
 # ── Health check ───────────────────────────────────────────────────────────────
