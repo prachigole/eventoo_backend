@@ -57,7 +57,7 @@ class Vendor(Base):
 
     user: Mapped["User"] = relationship("User", back_populates="vendors")  # noqa: F821
     candidacies: Mapped[list["Candidate"]] = relationship(  # noqa: F821
-        "Candidate", back_populates="vendor"
+        "Candidate", back_populates="vendor", passive_deletes=True
     )
 
     __table_args__ = (

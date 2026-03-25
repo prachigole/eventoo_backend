@@ -1,10 +1,28 @@
 # Test Cases — Eventoo Backend
 
-Master test plan for the pytest test suite. Run with:
+Master test plan for the pytest test suite.
+
+## Running Tests
+
 ```bash
+cd eventoo_backend
 source .venv/bin/activate
 python -m pytest tests/ -v --tb=short
 ```
+
+- `--tb=short` prints the failing test name and the exact assertion that failed.
+- A passing run ends with `X passed` and no red output.
+- Any test that does not pass must be fixed before merging.
+
+## Coverage Rule
+
+Every API endpoint must have test cases for **all three response types**:
+
+| Type | Example |
+|---|---|
+| **Empty** | List with no records returns `data: []`; GET unknown ID returns 404 |
+| **Success** | Valid input returns the expected HTTP status and response shape |
+| **Error** | Invalid/missing field returns 4xx with `success: false` |
 
 ---
 
@@ -81,8 +99,86 @@ python -m pytest tests/ -v --tb=short
 
 ---
 
+## Users & Invites
+
+| ID | Test | File | Expected | Status |
+|---|---|---|---|---|
+| USER-001 | GET /me returns current user with role | test_users.py | 200, role=manager | ⬜ Todo |
+| USER-002 | GET /me with no prior record auto-creates user | test_users.py | 200, user created | ⬜ Todo |
+| INVITE-001 | POST /invites — manager creates invite token | test_invites.py | 201, token in response | ⬜ Todo |
+| INVITE-002 | POST /invites/accept — valid token sets role=employee | test_invites.py | 200, role updated | ⬜ Todo |
+| INVITE-003 | POST /invites/accept — already-used token returns error | test_invites.py | 400 | ⬜ Todo |
+| INVITE-004 | POST /invites/accept — non-existent token returns 404 | test_invites.py | 404 | ⬜ Todo |
+
+---
+
+## Tasks
+
+| ID | Test | File | Expected | Status |
+|---|---|---|---|---|
+| TASK-001 | List tasks for event (empty) | test_tasks.py | 200, data=[] | ⬜ Todo |
+| TASK-002 | Manager creates task with valid data | test_tasks.py | 201, task in response | ⬜ Todo |
+| TASK-003 | Manager creates task missing required field | test_tasks.py | 422 | ⬜ Todo |
+| TASK-004 | Employee cannot create task | test_tasks.py | 403 | ⬜ Todo |
+| TASK-005 | Manager updates task title via PATCH | test_tasks.py | 200, updated field reflected | ⬜ Todo |
+| TASK-006 | Manager sets review_note when approving | test_tasks.py | 200, review_note saved | ⬜ Todo |
+| TASK-007 | Manager setting review_note without status change returns error | test_tasks.py | 400 | ⬜ Todo |
+| TASK-008 | Employee transitions status along valid path | test_tasks.py | 200, status updated | ⬜ Todo |
+| TASK-009 | Employee invalid status transition returns error | test_tasks.py | 400 | ⬜ Todo |
+| TASK-010 | Employee cannot set review_note | test_tasks.py | 403 | ⬜ Todo |
+| TASK-011 | Employee sets submission_note when transitioning to submitted | test_tasks.py | 200, note saved | ⬜ Todo |
+| TASK-012 | Employee setting submission_note without submitting returns error | test_tasks.py | 400 | ⬜ Todo |
+| TASK-013 | Manager deletes task | test_tasks.py | 200, then 404 on re-fetch | ⬜ Todo |
+| TASK-014 | GET /my-tasks returns only tasks assigned to current user | test_tasks.py | 200, correct tasks | ⬜ Todo |
+
+---
+
+## Extension Requests
+
+| ID | Test | File | Expected | Status |
+|---|---|---|---|---|
+| EXT-001 | List extension requests for task (empty) | test_extension_requests.py | 200, data=[] | ⬜ Todo |
+| EXT-002 | Employee submits valid extension request | test_extension_requests.py | 201, request in response | ⬜ Todo |
+| EXT-003 | Employee submits request missing new_due_date | test_extension_requests.py | 422 | ⬜ Todo |
+| EXT-004 | Manager cannot submit extension request | test_extension_requests.py | 403 | ⬜ Todo |
+| EXT-005 | Manager approves extension request | test_extension_requests.py | 200, status=approved | ⬜ Todo |
+| EXT-006 | Manager rejects extension request | test_extension_requests.py | 200, status=rejected | ⬜ Todo |
+| EXT-007 | Non-owner cannot approve request | test_extension_requests.py | 403/404 | ⬜ Todo |
+
+---
+
+## Task Photos
+
+| ID | Test | File | Expected | Status |
+|---|---|---|---|---|
+| PHOTO-001 | List photos for task (empty) | test_task_photos.py | 200, data=[] | ⬜ Todo |
+| PHOTO-002 | Employee uploads valid photo | test_task_photos.py | 201, file_path in response | ⬜ Todo |
+| PHOTO-003 | Upload rejected for unsupported extension | test_task_photos.py | 400 | ⬜ Todo |
+| PHOTO-004 | Upload rejected when file exceeds 10 MB | test_task_photos.py | 400 | ⬜ Todo |
+| PHOTO-005 | Manager cannot upload (only employees can) | test_task_photos.py | 403 | ⬜ Todo |
+| PHOTO-006 | Manager views photos for their task | test_task_photos.py | 200, list of photos | ⬜ Todo |
+| PHOTO-007 | Delete photo removes DB record | test_task_photos.py | 200, then 404 | ⬜ Todo |
+| PHOTO-008 | Non-owner/non-uploader cannot delete | test_task_photos.py | 403 | ⬜ Todo |
+
+---
+
+## Client Portal
+
+| ID | Test | File | Expected | Status |
+|---|---|---|---|---|
+| CLIENT-001 | Manager creates client invite | test_client_portal.py | 201, token in response | ⬜ Todo |
+| CLIENT-002 | Non-manager cannot create invite | test_client_portal.py | 403 | ⬜ Todo |
+| CLIENT-003 | Client redeems valid invite token | test_client_portal.py | 200, role=client | ⬜ Todo |
+| CLIENT-004 | Redeeming already-used token returns error | test_client_portal.py | 400 | ⬜ Todo |
+| CLIENT-005 | Redeeming non-existent token returns 404 | test_client_portal.py | 404 | ⬜ Todo |
+| CLIENT-006 | Client fetches their event portal data | test_client_portal.py | 200, event + task summary | ⬜ Todo |
+| CLIENT-007 | Non-client user cannot access /my-client-event | test_client_portal.py | 403 | ⬜ Todo |
+
+---
+
 ## Notes
 
-- All tests use SQLite (in-memory via `test.db`) rather than PostgreSQL. SQLite does not support PostgreSQL-specific types (`UUID`, `JSONB`, `Enum`), so the test setup uses SQLAlchemy's `create_all` which translates types to SQLite equivalents. `UUID` is stored as TEXT, `JSONB` as TEXT, Enum as VARCHAR.
-- `DEV_SKIP_AUTH=true` is set in the `client` fixture so all tests pass any string as a Bearer token. The uid derived from the raw token string is used as the Firebase UID.
-- Tests are isolated: `reset_db` fixture drops and recreates all tables before each test.
+- All tests use SQLite (via `test.db`) rather than PostgreSQL. The conftest patches `postgresql.UUID` → string and `JSONB` → JSON for SQLite compatibility.
+- `DEV_SKIP_AUTH=true` is set in conftest — any Bearer token is accepted. The raw token string becomes the Firebase UID.
+- Tests are isolated: `reset_db` fixture drops and recreates all tables before each test, and cleans up the `uploads/` directory.
+- Rows marked ⬜ Todo are specified but not yet implemented in test files. ✅ Pass means the test exists and passes.

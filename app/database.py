@@ -34,7 +34,11 @@ def get_or_create_user(db: Session, firebase_uid: str, phone: str | None = None)
 
     if firebase_uid in _uid_to_user_id:
         user_id = _uid_to_user_id[firebase_uid]
-        return db.get(User, user_id)
+        user = db.get(User, user_id)
+        if user is not None:
+            return user
+        # Cache is stale (e.g. row was deleted) — fall through to re-create
+        del _uid_to_user_id[firebase_uid]
 
     user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
     if not user:

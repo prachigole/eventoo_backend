@@ -45,6 +45,7 @@ class EventUpdate(CamelSchema):
     client_email: str | None = None
     budget: int | None = Field(default=None, ge=0)
     notes: str | None = None
+    vendor_ids: list[str] | None = None
 
 
 # ── Read schemas (response bodies) ────────────────────────────────────────────
@@ -61,6 +62,7 @@ class EventSummary(CamelSchema):
     attendee_count: int
     capacity: int
     cover_gradient: list[int] | None
+    vendor_ids: list[str] | None
     created_at: datetime
     updated_at: datetime
 
@@ -84,6 +86,7 @@ class EventDetail(CamelSchema):
     client_email: str | None
     budget: int | None
     notes: str | None
+    vendor_ids: list[str] | None
     candidates: list["CandidateWithVendor"] = []  # populated via selectinload
     created_at: datetime
     updated_at: datetime

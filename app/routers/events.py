@@ -1,4 +1,5 @@
 import uuid
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -9,8 +10,11 @@ from ..database import get_db, get_or_create_user
 from ..exceptions import Forbidden, NotFound
 from ..models.candidate import Candidate
 from ..models.event import Event, EventCategory, EventStatus
+from ..models.task_photo import TaskPhoto
 from ..schemas.common import ok, paginated
 from ..schemas.event import EventCreate, EventDetail, EventSummary, EventUpdate
+
+_BASE = Path(__file__).resolve().parents[2]
 
 router = APIRouter(prefix="/events", tags=["Events"])
 
@@ -135,6 +139,11 @@ def delete_event(
 ):
     user = get_or_create_user(db, token.uid, token.phone)
     event = _get_owned(db, event_id, user.id)
+
+    # Clean up task photo files from disk before the DB cascade removes the rows
+    photos = db.query(TaskPhoto).filter(TaskPhoto.event_id == event_id).all()
+    for photo in photos:
+        (_BASE / photo.file_path.lstrip("/")).unlink(missing_ok=True)
 
     db.delete(event)
     db.commit()

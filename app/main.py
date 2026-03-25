@@ -12,7 +12,7 @@ from .config import settings
 from .exceptions import AppException, app_exception_handler
 from .logging_middleware import RequestLoggingMiddleware
 from .mdns import advertise, stop
-from .routers import events, vendors, candidates, todos, users, invites, tasks, extension_requests, task_photos
+from .routers import events, vendors, candidates, todos, users, invites, tasks, extension_requests, task_photos, client_invites, companies, event_assistant
 
 # ── Logging setup ──────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -21,9 +21,10 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 # ── Lifespan: mDNS advertisement ──────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    # Skip mDNS in test / dev-skip-auth mode — tests restart the app many
-    # times per run and Zeroconf raises NonUniqueNameException on re-registration.
-    if settings.dev_skip_auth:
+    # Skip mDNS only when explicitly told to (e.g. during tests, which restart
+    # the app many times and would get NonUniqueNameException on re-registration).
+    # Normal dev mode still advertises so the Flutter app can discover the Mac.
+    if settings.skip_mdns:
         yield
         return
 
@@ -88,6 +89,9 @@ app.include_router(invites.router,    prefix="/api/v1")
 app.include_router(tasks.router,               prefix="/api/v1")
 app.include_router(extension_requests.router,  prefix="/api/v1")
 app.include_router(task_photos.router,         prefix="/api/v1")
+app.include_router(client_invites.router,      prefix="/api/v1")
+app.include_router(companies.router,           prefix="/api/v1")
+app.include_router(event_assistant.router,     prefix="/api/v1")
 
 # ── Static file serving for uploaded photos ────────────────────────────────────
 os.makedirs("uploads/task_photos", exist_ok=True)

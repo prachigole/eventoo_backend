@@ -18,10 +18,11 @@ from sqlalchemy import JSON, String, TypeDecorator, create_engine, event as sa_e
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import Engine
 
-# Set DEV_SKIP_AUTH before importing the app so settings picks it up
+# Set env vars before importing the app so settings picks them up
 os.environ["DEV_SKIP_AUTH"] = "true"
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
 os.environ["FIREBASE_CREDENTIALS_PATH"] = ""
+os.environ["SKIP_MDNS"] = "true"  # tests restart the app many times; avoid Zeroconf re-registration errors
 
 # ── Monkey-patch postgresql.UUID before app imports it ────────────────────────
 # We replace the PostgreSQL UUID dialect type with a TypeDecorator that stores
@@ -84,6 +85,8 @@ import app.models.invite     # noqa: F401, E402
 import app.models.task               # noqa: F401, E402
 import app.models.extension_request  # noqa: F401, E402
 import app.models.task_photo          # noqa: F401, E402
+import app.models.client_invite       # noqa: F401, E402
+import app.models.company             # noqa: F401, E402
 
 TEST_DATABASE_URL = "sqlite:///./test.db"
 

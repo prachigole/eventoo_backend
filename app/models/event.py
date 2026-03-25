@@ -68,15 +68,24 @@ class Event(Base):
     client_email: Mapped[str | None] = mapped_column(String(255))
     budget: Mapped[int | None] = mapped_column(Integer)  # ₹ thousands
     notes: Mapped[str | None] = mapped_column(Text)
+    vendor_ids: Mapped[list | None] = mapped_column(JSONB, default=list)  # list of vendor ID strings
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, onupdate=_now
     )
 
-    user: Mapped["User"] = relationship("User", back_populates="events")  # noqa: F821
+    user: Mapped["User"] = relationship(  # noqa: F821
+        "User", back_populates="events", foreign_keys="[Event.user_id]"
+    )
     candidates: Mapped[list["Candidate"]] = relationship(  # noqa: F821
         "Candidate", back_populates="event", cascade="all, delete-orphan"
+    )
+    todos: Mapped[list["Todo"]] = relationship(  # noqa: F821
+        "Todo", back_populates="event", cascade="all, delete-orphan"
+    )
+    team_members: Mapped[list["TeamMember"]] = relationship(  # noqa: F821
+        "TeamMember", back_populates="event", cascade="all, delete-orphan"
     )
 
     __table_args__ = (

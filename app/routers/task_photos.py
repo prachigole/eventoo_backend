@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from ..auth import TokenData, verify_token
 from ..database import get_db, get_or_create_user
-from ..exceptions import Forbidden, NotFound
+from ..exceptions import BadRequest, Forbidden, NotFound
 from ..models.event import Event
 from ..models.task import Task
 from ..models.task_photo import TaskPhoto
@@ -15,7 +15,12 @@ from ..schemas.task_photo import TaskPhotoOut
 
 router = APIRouter(tags=["TaskPhotos"])
 
-_UPLOADS = Path("uploads/task_photos")
+# Anchored to repo root so the path is stable regardless of CWD
+_BASE = Path(__file__).resolve().parents[2]
+_UPLOADS = _BASE / "uploads" / "task_photos"
+
+_ALLOWED_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".heic"}
+_MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
 def _owned_event(db: Session, event_id: uuid.UUID, user_id: uuid.UUID) -> Event:
@@ -27,13 +32,18 @@ def _owned_event(db: Session, event_id: uuid.UUID, user_id: uuid.UUID) -> Event:
 
 async def _save_file(file: UploadFile, task_id: uuid.UUID) -> str:
     """Saves the uploaded file and returns its API path (/uploads/...)."""
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in _ALLOWED_EXTS:
+        raise BadRequest(f"Unsupported file type. Allowed: {', '.join(_ALLOWED_EXTS)}")
+
+    contents = await file.read()
+    if len(contents) > _MAX_FILE_SIZE:
+        raise BadRequest("File too large. Maximum size is 10 MB")
+
     dest_dir = _UPLOADS / str(task_id)
     dest_dir.mkdir(parents=True, exist_ok=True)
 
-    ext = Path(file.filename or "photo.jpg").suffix or ".jpg"
     filename = f"{uuid.uuid4()}{ext}"
-
-    contents = await file.read()
     (dest_dir / filename).write_bytes(contents)
 
     return f"/uploads/task_photos/{task_id}/{filename}"
@@ -138,8 +148,8 @@ def delete_photo(
     if not is_manager_owner and not is_uploader:
         raise Forbidden()
 
-    # Remove file from disk  (/uploads/task_photos/… → uploads/task_photos/…)
-    disk_path = Path(photo.file_path.lstrip("/"))
+    # Remove file from disk  (/uploads/task_photos/… → <repo>/uploads/task_photos/…)
+    disk_path = _BASE / photo.file_path.lstrip("/")
     disk_path.unlink(missing_ok=True)
 
     db.delete(photo)

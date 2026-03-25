@@ -54,14 +54,14 @@ alembic upgrade head
 ### 4. Start the server
 
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+bash start.sh
 ```
 
 Swagger UI is available at [http://localhost:8000/docs](http://localhost:8000/docs).
 
 ## Documentation
 
-- [API Reference](API_REFERENCE.md) — all 15 endpoints with curl examples
+- [API Reference](API_REFERENCE.md) — all endpoints with curl examples
 - [Database Schema](DATABASE_SCHEMA.md) — tables, indexes, ER diagram
 - [Architecture](ARCHITECTURE.md) — request lifecycle, env vars, error formats
 - [API Efficiency Report](API_EFFICIENCY_REPORT.md) — performance audit

@@ -11,39 +11,73 @@ eventoo_backend/
 │   ├── database.py         # SQLAlchemy engine, SessionLocal, get_db(), in-process user cache
 │   ├── auth.py             # Firebase JWT verification, DEV_SKIP_AUTH mode, TokenData model
 │   ├── exceptions.py       # AppException, NotFound, Forbidden, Conflict, BadRequest + handler
+│   ├── logging_middleware.py  # RequestLoggingMiddleware — logs method, path, status, duration
+│   ├── mdns.py             # Zeroconf mDNS advertisement (_eventoo._tcp.local.)
 │   ├── models/
 │   │   ├── __init__.py     # Re-exports Base and all models so Alembic sees them
 │   │   ├── base.py         # SQLAlchemy DeclarativeBase
-│   │   ├── user.py         # User model (firebase_uid, phone)
-│   │   ├── event.py        # Event model + EventCategory/EventStatus enums
-│   │   ├── vendor.py       # Vendor model + VendorCategory enum
-│   │   └── candidate.py    # Candidate model + CandidateStatus enum
+│   │   ├── user.py         # User (firebase_uid, role, client_event_id)
+│   │   ├── event.py        # Event + EventCategory/EventStatus enums
+│   │   ├── vendor.py       # Vendor + VendorCategory enum
+│   │   ├── candidate.py    # Candidate (event shortlist) + CandidateStatus enum
+│   │   ├── todo.py         # Todo (per-event checklist item)
+│   │   ├── invite.py       # InviteToken (employee onboarding)
+│   │   ├── task.py         # Task + TaskStatus/TaskPriority enums
+│   │   ├── extension_request.py  # ExtensionRequest + ExtReqStatus enum
+│   │   ├── task_photo.py   # TaskPhoto (uploaded evidence files)
+│   │   └── client_invite.py      # ClientInviteToken (client portal access)
 │   ├── routers/
 │   │   ├── __init__.py
-│   │   ├── events.py       # GET/POST/PATCH/DELETE /api/v1/events
-│   │   ├── vendors.py      # GET/POST/PATCH/DELETE /api/v1/vendors
-│   │   └── candidates.py   # GET/POST/PATCH/DELETE /api/v1/events/{id}/candidates
+│   │   ├── events.py          # GET/POST/PATCH/DELETE /api/v1/events
+│   │   ├── vendors.py         # GET/POST/PATCH/DELETE /api/v1/vendors
+│   │   ├── candidates.py      # GET/POST/PATCH/DELETE /api/v1/events/{id}/candidates
+│   │   ├── todos.py           # GET/POST/PATCH/DELETE /api/v1/events/{id}/todos
+│   │   ├── users.py           # GET /api/v1/me
+│   │   ├── invites.py         # POST /api/v1/invites, POST /api/v1/invites/accept
+│   │   ├── tasks.py           # CRUD /api/v1/events/{id}/tasks, GET /api/v1/my-tasks
+│   │   ├── extension_requests.py  # CRUD /api/v1/events/{id}/tasks/{id}/extension-requests
+│   │   ├── task_photos.py     # POST/GET/DELETE /api/v1/events/{id}/tasks/{id}/photos
+│   │   └── client_invites.py  # Client portal invite + portal data endpoints
 │   └── schemas/
-│       ├── common.py       # CamelSchema base, ApiResponse, ok(), paginated() helpers
-│       ├── event.py        # EventCreate, EventUpdate, EventSummary, EventDetail
-│       ├── vendor.py       # VendorCreate, VendorUpdate, VendorSummary, VendorDetail
-│       └── candidate.py    # CandidateCreate, CandidateUpdate, CandidateWithVendor
+│       ├── common.py          # CamelSchema base, ApiResponse, ok(), paginated() helpers
+│       ├── event.py           # EventCreate, EventUpdate, EventSummary, EventDetail
+│       ├── vendor.py          # VendorCreate, VendorUpdate, VendorSummary, VendorDetail
+│       ├── candidate.py       # CandidateCreate, CandidateUpdate, CandidateWithVendor
+│       ├── task.py            # TaskCreate, TaskUpdate, TaskOut
+│       ├── extension_request.py  # ExtensionRequestCreate, ExtensionRequestOut, ReviewBody
+│       ├── task_photo.py      # TaskPhotoOut
+│       └── client_invite.py   # ClientInviteOut, ClientPortalData, ApprovedTask
 ├── alembic/
 │   ├── env.py              # Alembic migration environment
 │   ├── alembic.ini
 │   └── versions/
-│       └── 0001_initial.py # Initial schema migration
+│       ├── 0001_initial.py
+│       ├── 0002_add_vendor_ids_todos_team.py
+│       ├── 0003_add_user_role.py
+│       ├── 0004_add_invite_tokens.py
+│       ├── 0005_add_tasks.py
+│       ├── 0006_add_extension_requests.py
+│       ├── 0007_add_task_photos.py
+│       ├── 0008_add_task_submission_fields.py
+│       └── 0009_add_client_portal.py
 ├── tests/
-│   ├── conftest.py         # Shared fixtures: SQLite test DB, TestClient, auth_headers
+│   ├── conftest.py              # SQLite test DB, TestClient, auth_headers fixtures
 │   ├── test_health.py
 │   ├── test_events.py
 │   ├── test_vendors.py
 │   ├── test_candidates.py
-│   └── test_security.py
+│   ├── test_security.py
+│   ├── test_task_submission.py
+│   ├── test_extension_requests.py
+│   ├── test_task_photos.py
+│   └── test_client_portal.py
+├── uploads/                # Task photo files (not committed)
+│   └── task_photos/
 ├── docs/                   # This documentation
 ├── scripts/
 │   ├── pre-commit-validate.sh
 │   └── update-test-docs.sh
+├── start.sh                # Activate venv + start Uvicorn
 ├── requirements.txt
 ├── .gitignore
 ├── .env.example
